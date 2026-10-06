@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mümin Pusulası - Yönetim Paneli</title>
+    <!-- Google Identity Services (Google ile Giriş için) -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <style>
+        :root {
+            --primary: #0D3025; /* Zümrüt Yeşili */
+            --secondary: #144938;
+            --gold: #D4AF37; /* Altın */
+            --gold-light: #F3E5AB;
+            --bg-color: #081B15;
+            --text-main: #F4F6F5;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .login-container {
+            background-color: var(--primary);
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+            /* Cam Efekti */
+            backdrop-filter: blur(10px);
+            background: rgba(13, 48, 37, 0.8);
+        }
+
+        .login-container h1 {
+            color: var(--gold);
+            margin-bottom: 10px;
+            font-size: 24px;
+        }
+
+        .login-container p {
+            color: var(--gold-light);
+            font-size: 14px;
+            margin-bottom: 30px;
+            opacity: 0.8;
+        }
+
+        .admin-dashboard {
+            display: none; /* Giriş yapana kadar gizli */
+            width: 100%;
+            height: 100%;
+        }
+
+        .dashboard-header {
+            background-color: var(--primary);
+            padding: 20px;
+            border-bottom: 2px solid var(--gold);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .dashboard-header h2 {
+            margin: 0;
+            color: var(--gold);
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .user-info img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 2px solid var(--gold);
+        }
+
+        .logout-btn {
+            background: transparent;
+            border: 1px solid var(--gold);
+            color: var(--gold);
+            padding: 5px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .logout-btn:hover {
+            background: var(--gold);
+            color: var(--bg-color);
+        }
+
+        .dashboard-content {
+            padding: 30px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .card {
+            background-color: var(--primary);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid rgba(212, 175, 55, 0.2);
+            /* Cam Efekti */
+            backdrop-filter: blur(10px);
+            background: rgba(13, 48, 37, 0.6);
+        }
+
+        .card h3 {
+            color: var(--gold);
+            margin-top: 0;
+            border-bottom: 1px solid rgba(212, 175, 55, 0.2);
+            padding-bottom: 10px;
+        }
+
+        .switch-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 15px;
+        }
+
+        /* Toggle Switch CSS */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 24px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: var(--gold);
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+
+        .stats-number {
+            font-size: 36px;
+            color: #fff;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 1. GİRİŞ EKRANI -->
+    <div class="login-container" id="loginScreen">
+        <h1>Yönetim Paneli</h1>
+        <p>Sadece yetkili hesap (Admin) ile giriş yapılabilir.</p>
+        
+        <!-- Google Giriş Butonu Yeri -->
+        <div id="g_id_onload"
+             data-client_id="93580675475-fm4h6qpiudf8sagif8usrkej0n9ra8ft.apps.googleusercontent.com"
+             data-callback="handleCredentialResponse"
+             data-auto_prompt="false">
+        </div>
+        <div class="g_id_signin"
+             data-type="standard"
+             data-size="large"
+             data-theme="outline"
+             data-text="sign_in_with"
+             data-shape="rectangular"
+             data-logo_alignment="left">
+        </div>
+    </div>
+
+    <!-- 2. YÖNETİM PANELİ (GİRİŞ YAPINCA AÇILACAK) -->
+    <div class="admin-dashboard" id="adminDashboard">
+        <div class="dashboard-header">
+            <h2>Mümin Pusulası Kontrol Merkezi</h2>
+            <div class="user-info">
+                <span id="adminName">Admin</span>
+                <img id="adminPhoto" src="" alt="Profil">
+                <button class="logout-btn" onclick="logout()">Çıkış Yap</button>
+            </div>
+        </div>
+
+        <div class="dashboard-content">
+            
+            <!-- Canlı İstatistikler -->
+            <div class="card">
+                <h3>👥 Canlı İstatistikler</h3>
+                <p>Şu an uygulamayı kullanan aktif kişi sayısı:</p>
+                <div class="stats-number" id="activeUsers">--</div>
+                <small style="color:var(--gold-light); opacity:0.6;">(Veriler simülasyondur, API bağlanınca aktifleşecek)</small>
+            </div>
+
+            <!-- Reklam Kontrolü -->
+            <div class="card">
+                <h3>💰 Reklam Yönetimi (AdMob)</h3>
+                <div class="switch-container">
+                    <span>Tüm Reklamları Aç/Kapat</span>
+                    <label class="switch">
+                        <input type="checkbox" id="adSwitch" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="switch-container">
+                    <span>Google Client ID</span>
+                    <input type="text" value="93580675475-fm4h6..." disabled style="background:transparent; border:1px solid var(--gold); color:white; padding:5px; border-radius:5px; width:150px;">
+                </div>
+            </div>
+
+            <!-- İçerik Yönetimi -->
+            <div class="card">
+                <h3>🖼️ Duvar Kağıdı Yönetimi</h3>
+                <p>Uygulamaya uzaktan yeni duvar kağıdı ekleyin.</p>
+                <input type="file" style="margin-bottom:15px; color:white;">
+                <button style="background:var(--gold); border:none; padding:10px 15px; border-radius:8px; cursor:pointer; font-weight:bold; color:var(--primary)">Yükle & Uygulamaya Gönder</button>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // Google'dan giriş başarılı olunca burası çalışacak
+        function handleCredentialResponse(response) {
+            // Şifrelenmiş token'ı parçalayıp kullanıcı bilgilerini alıyoruz
+            const responsePayload = decodeJwtResponse(response.credential);
+            
+            // YALNIZCA SİZİN MAİLİNİZ GİREBİLİR:
+            const ADMIN_EMAIL = "mustafakeksinn@gmail.com";
+            
+            if (responsePayload.email === ADMIN_EMAIL) {
+                console.log("Giriş Yapan Kişi: " + responsePayload.name);
+                
+                // Paneli aç, giriş ekranını gizle
+                document.getElementById('loginScreen').style.display = 'none';
+                document.getElementById('adminDashboard').style.display = 'block';
+                document.body.style.display = 'block';
+
+                // Kullanıcı bilgilerini ekrana yaz
+                document.getElementById('adminName').innerText = responsePayload.name;
+                document.getElementById('adminPhoto').src = responsePayload.picture;
+            } else {
+                alert("Yetkisiz Giriş! Sadece yönetici hesabı erişebilir.");
+            }
+        }
+
+        // Çıkış yapma işlemi
+        function logout() {
+            document.getElementById('loginScreen').style.display = 'block';
+            document.getElementById('adminDashboard').style.display = 'none';
+            document.body.style.display = 'flex';
+        }
+
+        // JWT Çözücü fonksiyon (Güvenlik amaçlı)
+        function decodeJwtResponse(token) {
+            var base64Url = token.split('.')[1];
+            var base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            var jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function(c) {
+                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+            }).join(''));
+            return JSON.parse(jsonPayload);
+        }
+    </script>
+</body>
+</html>
