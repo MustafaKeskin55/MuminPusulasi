@@ -329,6 +329,32 @@
             pointer-events: none;
         }
 
+        /* MOBILE RESPONSIVENESS */
+        @media (max-width: 768px) {
+            body {
+                flex-direction: column;
+                overflow: auto;
+            }
+            .sidebar {
+                width: 100%;
+                border-right: none;
+                border-bottom: 1px solid rgba(255,255,255,0.05);
+                padding: 1rem;
+            }
+            .brand {
+                margin-bottom: 1rem;
+                justify-content: center;
+            }
+            .main-content {
+                padding: 1rem;
+            }
+            .controls-grid {
+                grid-template-columns: 1fr;
+            }
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
 </head>
 <body>
@@ -478,7 +504,7 @@
             </div>
 
             <!-- API Bilgilendirme -->
-            <div style="margin-top:2rem; background:rgba(239, 68, 68, 0.1); border-left:4px solid var(--danger); padding:1rem; border-radius:8px;">
+            <div id="apiWarning" style="margin-top:2rem; background:rgba(239, 68, 68, 0.1); border-left:4px solid var(--danger); padding:1rem; border-radius:8px;">
                 <h4 style="color:var(--danger); margin-bottom:5px;"><i class="fa-solid fa-triangle-exclamation"></i> API Bağlantısı Bekleniyor</h4>
                 <p style="font-size:0.85rem; color:rgba(255,255,255,0.7);">
                     Şu anda arayüz tasarımı görüyorsunuz. Verilerin (Anlık kullanıcı, Reklam açma/kapatma) gerçekten çalışması için Cloudflare Functions (Sunucu) entegrasyonu kodlanacaktır.
@@ -489,8 +515,31 @@
     </div>
 
     <script>
+        // Global değişkenler
+        let currentGoogleToken = "";
+
+        async function fetchConfig() {
+            try {
+                // API'den mevcut ayarları çek
+                const response = await fetch('/api/config');
+                if (response.ok) {
+                    const config = await response.json();
+                    document.getElementById('adSwitch').checked = config.adsEnabled;
+                    document.getElementById('apiStatus').innerHTML = '<i class="fa-solid fa-circle"></i> Sistem Aktif & Sunucuya Bağlı';
+                    document.getElementById('apiStatus').style.color = 'var(--accent)';
+                    document.getElementById('apiStatus').style.background = 'rgba(16, 185, 129, 0.1)';
+                    // API uyarı mesajını gizle
+                    document.getElementById('apiWarning').style.display = 'none';
+                }
+            } catch (e) {
+                console.error("API Bağlantı hatası:", e);
+            }
+        }
+
         function handleCredentialResponse(response) {
             const token = response.credential;
+            currentGoogleToken = token; // API isteklerinde kullanmak için sakla
+
             const base64Url = token.split('.')[1];
             const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
             const payload = JSON.parse(decodeURIComponent(window.atob(base64).split('').map(function(c) {
@@ -506,32 +555,64 @@
                 document.getElementById('adminName').innerText = payload.name;
                 document.getElementById('adminPhoto').src = payload.picture;
                 
-                // Simüle edilmiş veri yükleme efekti
-                setTimeout(() => {
-                    document.getElementById('activeUsers').innerText = "Simüle";
-                    document.getElementById('adSwitch').disabled = false;
-                }, 1000);
+                document.getElementById('adSwitch').disabled = false;
+                
+                // Panele girer girmez sunucudan güncel ayarları yükle
+                fetchConfig();
+                
             } else {
                 alert("Yetkisiz Giriş! Sadece yönetici hesabı (mustafakeksinn) erişebilir.");
             }
         }
 
         function logout() {
+            currentGoogleToken = "";
             document.getElementById('loginScreen').style.display = 'flex';
             document.getElementById('adminDashboard').style.display = 'none';
         }
         
-        function saveConfig() {
+        async function saveConfig() {
             const btn = document.getElementById('saveBtn');
+            const originalText = btn.innerHTML;
             btn.innerHTML = "<i class='fa-solid fa-spinner fa-spin'></i> Kaydediliyor...";
             btn.classList.add('loading');
             
-            // API yazılmadığı için sahte bekleme
-            setTimeout(() => {
-                btn.innerHTML = "Ayarları API'ye Kaydet";
-                btn.classList.remove('loading');
-                alert("Uyarı: Arka plan API'si henüz yazılmadığı için değişiklikler Android uygulamasına GİTMEDİ. Lütfen yapay zekadan API entegrasyonunu tamamlamasını isteyin.");
-            }, 1000);
+            const isAdsEnabled = document.getElementById('adSwitch').checked;
+
+            try {
+                // Cloudflare API'ye Google Yetki Biletimizle (Token) veri gönderiyoruz
+                const response = await fetch('/api/config', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${currentGoogleToken}` // Güvenlik Anahtarı
+                    },
+                    body: JSON.stringify({
+                        adsEnabled: isAdsEnabled,
+                        ramazanMode: false
+                    })
+                });
+
+                if (response.ok) {
+                    btn.innerHTML = "<i class='fa-solid fa-check'></i> Başarıyla Kaydedildi!";
+                    btn.style.background = "var(--accent)";
+                    btn.style.color = "white";
+                    
+                    setTimeout(() => {
+                        btn.innerHTML = originalText;
+                        btn.style.background = "var(--card-bg)";
+                    }, 3000);
+                } else {
+                    const err = await response.json();
+                    alert("Kaydedilemedi: " + err.error);
+                    btn.innerHTML = originalText;
+                }
+            } catch (error) {
+                alert("Bağlantı hatası!");
+                btn.innerHTML = originalText;
+            }
+            
+            btn.classList.remove('loading');
         }
     </script>
 </body>
