@@ -516,11 +516,32 @@
 
     <script>
         // Global değişkenler
-        let currentGoogleToken = "";
+        let currentGoogleToken = localStorage.getItem("admin_token") || "";
+
+        window.onload = function() {
+            // Sayfa yüklendiğinde oturum kalıcı mı kontrol et
+            if (currentGoogleToken) {
+                try {
+                    // Token hala geçerli mi basit kontrol (Süresi bitmemişse)
+                    const base64Url = currentGoogleToken.split('.')[1];
+                    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+                    const payload = JSON.parse(decodeURIComponent(window.atob(base64).split('').map(function(c) {
+                        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+                    }).join('')));
+                    
+                    if (payload.email === "mustafakeksinn@gmail.com") {
+                        showDashboard(payload);
+                    } else {
+                        logout();
+                    }
+                } catch (e) {
+                    logout();
+                }
+            }
+        };
 
         async function fetchConfig() {
             try {
-                // API'den mevcut ayarları çek
                 const response = await fetch('/api/config');
                 if (response.ok) {
                     const config = await response.json();
@@ -528,8 +549,8 @@
                     document.getElementById('apiStatus').innerHTML = '<i class="fa-solid fa-circle"></i> Sistem Aktif & Sunucuya Bağlı';
                     document.getElementById('apiStatus').style.color = 'var(--accent)';
                     document.getElementById('apiStatus').style.background = 'rgba(16, 185, 129, 0.1)';
-                    // API uyarı mesajını gizle
-                    document.getElementById('apiWarning').style.display = 'none';
+                    const warning = document.getElementById('apiWarning');
+                    if (warning) warning.style.display = 'none';
                 }
             } catch (e) {
                 console.error("API Bağlantı hatası:", e);
@@ -538,7 +559,8 @@
 
         function handleCredentialResponse(response) {
             const token = response.credential;
-            currentGoogleToken = token; // API isteklerinde kullanmak için sakla
+            currentGoogleToken = token;
+            localStorage.setItem("admin_token", token); // Oturumu kalıcı kaydet!
 
             const base64Url = token.split('.')[1];
             const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
@@ -546,30 +568,32 @@
                 return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
             }).join('')));
             
-            const ADMIN_EMAIL = "mustafakeksinn@gmail.com";
-            
-            if (payload.email === ADMIN_EMAIL) {
-                document.getElementById('loginScreen').style.display = 'none';
-                document.getElementById('adminDashboard').style.display = 'flex';
-                
-                document.getElementById('adminName').innerText = payload.name;
-                document.getElementById('adminPhoto').src = payload.picture;
-                
-                document.getElementById('adSwitch').disabled = false;
-                
-                // Panele girer girmez sunucudan güncel ayarları yükle
-                fetchConfig();
-                
+            if (payload.email === "mustafakeksinn@gmail.com") {
+                showDashboard(payload);
             } else {
                 alert("Yetkisiz Giriş! Sadece yönetici hesabı (mustafakeksinn) erişebilir.");
+                logout();
             }
+        }
+        
+        function showDashboard(payload) {
+            document.getElementById('loginScreen').style.display = 'none';
+            document.getElementById('adminDashboard').style.display = 'flex';
+            
+            document.getElementById('adminName').innerText = payload.name;
+            document.getElementById('adminPhoto').src = payload.picture;
+            
+            document.getElementById('adSwitch').disabled = false;
+            fetchConfig();
         }
 
         function logout() {
             currentGoogleToken = "";
+            localStorage.removeItem("admin_token"); // Oturumu tamamen sil
             document.getElementById('loginScreen').style.display = 'flex';
             document.getElementById('adminDashboard').style.display = 'none';
         }
+
         
         async function saveConfig() {
             const btn = document.getElementById('saveBtn');
