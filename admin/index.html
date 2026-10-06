@@ -4,301 +4,534 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mümin Pusulası - Yönetim Paneli</title>
-    <!-- Google Identity Services (Google ile Giriş için) -->
+    <!-- Google Identity Services -->
     <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <!-- Chart.js for professional charts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+
         :root {
-            --primary: #0D3025; /* Zümrüt Yeşili */
-            --secondary: #144938;
-            --gold: #D4AF37; /* Altın */
-            --gold-light: #F3E5AB;
-            --bg-color: #081B15;
-            --text-main: #F4F6F5;
+            --primary: #0A1C16;
+            --sidebar: #06110D;
+            --card-bg: rgba(13, 48, 37, 0.4);
+            --gold: #D4AF37;
+            --gold-hover: #F3E5AB;
+            --text-main: #FFFFFF;
+            --text-muted: #9BA4A0;
+            --accent: #10B981;
+            --danger: #EF4444;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Outfit', sans-serif;
         }
 
         body {
-            margin: 0;
-            padding: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--bg-color);
+            background-color: var(--primary);
             color: var(--text-main);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+        }
+
+        /* LOGIN SCREEN */
+        .login-wrapper {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: radial-gradient(circle at center, #0F382A 0%, var(--primary) 100%);
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            z-index: 9999;
         }
 
-        .login-container {
-            background-color: var(--primary);
-            padding: 40px;
-            border-radius: 16px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            border: 1px solid rgba(212, 175, 55, 0.3);
+        .login-card {
+            background: rgba(6, 17, 13, 0.8);
+            backdrop-filter: blur(20px);
+            padding: 3rem;
+            border-radius: 24px;
+            border: 1px solid rgba(212, 175, 55, 0.2);
             text-align: center;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
             max-width: 400px;
             width: 90%;
-            /* Cam Efekti */
-            backdrop-filter: blur(10px);
-            background: rgba(13, 48, 37, 0.8);
         }
 
-        .login-container h1 {
+        .login-card i {
+            font-size: 3rem;
             color: var(--gold);
-            margin-bottom: 10px;
-            font-size: 24px;
+            margin-bottom: 1rem;
         }
 
-        .login-container p {
-            color: var(--gold-light);
-            font-size: 14px;
-            margin-bottom: 30px;
-            opacity: 0.8;
+        .login-card h1 {
+            font-size: 1.8rem;
+            margin-bottom: 0.5rem;
+            color: var(--text-main);
         }
 
-        .admin-dashboard {
-            display: none; /* Giriş yapana kadar gizli */
+        .login-card p {
+            color: var(--text-muted);
+            margin-bottom: 2rem;
+            font-size: 0.9rem;
+        }
+
+        /* MAIN DASHBOARD */
+        .dashboard-wrapper {
+            display: none;
             width: 100%;
             height: 100%;
         }
 
-        .dashboard-header {
-            background-color: var(--primary);
-            padding: 20px;
-            border-bottom: 2px solid var(--gold);
+        /* SIDEBAR */
+        .sidebar {
+            width: 260px;
+            background: var(--sidebar);
+            border-right: 1px solid rgba(255,255,255,0.05);
+            padding: 2rem 1.5rem;
             display: flex;
-            justify-content: space-between;
-            align-items: center;
+            flex-direction: column;
         }
 
-        .dashboard-header h2 {
-            margin: 0;
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--gold);
+            margin-bottom: 3rem;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            color: var(--text-muted);
+            text-decoration: none;
+            border-radius: 12px;
+            margin-bottom: 8px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .nav-item:hover, .nav-item.active {
+            background: rgba(212, 175, 55, 0.1);
             color: var(--gold);
         }
 
-        .user-info {
+        .user-profile {
+            margin-top: auto;
+            background: rgba(255,255,255,0.03);
+            padding: 12px;
+            border-radius: 12px;
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
+            border: 1px solid rgba(255,255,255,0.05);
         }
 
-        .user-info img {
+        .user-profile img {
             width: 40px;
             height: 40px;
             border-radius: 50%;
             border: 2px solid var(--gold);
         }
 
-        .logout-btn {
-            background: transparent;
-            border: 1px solid var(--gold);
-            color: var(--gold);
-            padding: 5px 15px;
-            border-radius: 8px;
+        .user-info-text {
+            flex: 1;
+        }
+
+        .user-info-text div {
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+        
+        .user-info-text span {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .logout-icon {
+            color: var(--danger);
             cursor: pointer;
-            transition: all 0.3s;
+            padding: 5px;
+            transition: 0.3s;
+        }
+        .logout-icon:hover { color: #ff6b6b; }
+
+        /* CONTENT AREA */
+        .main-content {
+            flex: 1;
+            padding: 2rem 3rem;
+            overflow-y: auto;
+            background: radial-gradient(circle at top right, #0a241b 0%, var(--primary) 100%);
         }
 
-        .logout-btn:hover {
-            background: var(--gold);
-            color: var(--bg-color);
-        }
-
-        .dashboard-content {
-            padding: 30px;
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 20px;
-        }
-
-        .card {
-            background-color: var(--primary);
-            border-radius: 12px;
-            padding: 20px;
-            border: 1px solid rgba(212, 175, 55, 0.2);
-            /* Cam Efekti */
-            backdrop-filter: blur(10px);
-            background: rgba(13, 48, 37, 0.6);
-        }
-
-        .card h3 {
-            color: var(--gold);
-            margin-top: 0;
-            border-bottom: 1px solid rgba(212, 175, 55, 0.2);
-            padding-bottom: 10px;
-        }
-
-        .switch-container {
+        .header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-top: 15px;
+            margin-bottom: 2rem;
         }
 
-        /* Toggle Switch CSS */
+        .header h2 {
+            font-size: 1.8rem;
+            font-weight: 600;
+        }
+        
+        .header .status {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--accent);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .status i { font-size: 0.6rem; }
+
+        /* STATS GRID */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: var(--card-bg);
+            border: 1px solid rgba(212, 175, 55, 0.1);
+            padding: 1.5rem;
+            border-radius: 16px;
+            backdrop-filter: blur(10px);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(212, 175, 55, 0.3);
+        }
+
+        .stat-title {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        .stat-icon {
+            position: absolute;
+            right: -10px;
+            bottom: -10px;
+            font-size: 5rem;
+            opacity: 0.05;
+            color: var(--text-main);
+        }
+
+        /* CONTROL SECTIONS */
+        .controls-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+
+        .control-panel {
+            background: var(--card-bg);
+            border: 1px solid rgba(255,255,255,0.05);
+            padding: 1.5rem;
+            border-radius: 16px;
+            backdrop-filter: blur(10px);
+        }
+
+        .panel-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--gold);
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* TOGGLE SWITCH */
+        .setting-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .setting-info h4 { font-size: 0.95rem; font-weight: 500; }
+        .setting-info p { font-size: 0.8rem; color: var(--text-muted); margin-top: 4px; }
+
         .switch {
             position: relative;
             display: inline-block;
-            width: 50px;
+            width: 44px;
             height: 24px;
         }
-
-        .switch input {
-            opacity: 0;
-            width: 0;
-            height: 0;
-        }
-
+        .switch input { opacity: 0; width: 0; height: 0; }
         .slider {
-            position: absolute;
-            cursor: pointer;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: #ccc;
-            transition: .4s;
-            border-radius: 24px;
+            position: absolute; cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: rgba(255,255,255,0.1);
+            transition: .4s; border-radius: 24px;
         }
-
         .slider:before {
-            position: absolute;
-            content: "";
-            height: 16px;
-            width: 16px;
-            left: 4px;
-            bottom: 4px;
-            background-color: white;
-            transition: .4s;
-            border-radius: 50%;
+            position: absolute; content: "";
+            height: 18px; width: 18px; left: 3px; bottom: 3px;
+            background-color: white; transition: .4s; border-radius: 50%;
+        }
+        input:checked + .slider { background-color: var(--gold); }
+        input:checked + .slider:before { transform: translateX(20px); }
+
+        /* BUTTONS */
+        .btn {
+            background: var(--gold);
+            color: var(--primary);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.3s;
+            width: 100%;
+            margin-top: 15px;
+        }
+        .btn:hover {
+            background: var(--gold-hover);
+        }
+        
+        .loading {
+            opacity: 0.5;
+            pointer-events: none;
         }
 
-        input:checked + .slider {
-            background-color: var(--gold);
-        }
-
-        input:checked + .slider:before {
-            transform: translateX(26px);
-        }
-
-        .stats-number {
-            font-size: 36px;
-            color: #fff;
-            font-weight: bold;
-            margin: 10px 0;
-        }
     </style>
 </head>
 <body>
 
     <!-- 1. GİRİŞ EKRANI -->
-    <div class="login-container" id="loginScreen">
-        <h1>Yönetim Paneli</h1>
-        <p>Sadece yetkili hesap (Admin) ile giriş yapılabilir.</p>
-        
-        <!-- Google Giriş Butonu Yeri -->
-        <div id="g_id_onload"
-             data-client_id="93580675475-1asn8uudfa8pl2oe4ffg2lnib9o70flq.apps.googleusercontent.com"
-             data-callback="handleCredentialResponse"
-             data-auto_prompt="false">
-        </div>
-        <div class="g_id_signin"
-             data-type="standard"
-             data-size="large"
-             data-theme="outline"
-             data-text="sign_in_with"
-             data-shape="rectangular"
-             data-logo_alignment="left">
+    <div class="login-wrapper" id="loginScreen">
+        <div class="login-card">
+            <i class="fa-solid fa-kaaba"></i>
+            <h1>Yönetim Merkezi</h1>
+            <p>Mümin Pusulası resmi yönetim paneline hoş geldiniz. Lütfen yetkili hesabı doğrulayın.</p>
+            
+            <div id="g_id_onload"
+                 data-client_id="93580675475-1asn8uudfa8pl2oe4ffg2lnib9o70flq.apps.googleusercontent.com"
+                 data-callback="handleCredentialResponse"
+                 data-auto_prompt="false">
+            </div>
+            <div class="g_id_signin"
+                 data-type="standard"
+                 data-size="large"
+                 data-theme="outline"
+                 data-text="sign_in_with"
+                 data-shape="rectangular"
+                 data-logo_alignment="center">
+            </div>
         </div>
     </div>
 
-    <!-- 2. YÖNETİM PANELİ (GİRİŞ YAPINCA AÇILACAK) -->
-    <div class="admin-dashboard" id="adminDashboard">
-        <div class="dashboard-header">
-            <h2>Mümin Pusulası Kontrol Merkezi</h2>
-            <div class="user-info">
-                <span id="adminName">Admin</span>
+    <!-- 2. ANA PANEL -->
+    <div class="dashboard-wrapper" id="adminDashboard">
+        
+        <!-- Sol Menü -->
+        <div class="sidebar">
+            <div class="brand">
+                <i class="fa-solid fa-compass" style="font-size:1.5rem"></i> 
+                Mümin Pusulası
+            </div>
+            
+            <div class="nav-item active">
+                <i class="fa-solid fa-chart-pie"></i>
+                Genel Bakış
+            </div>
+            <div class="nav-item">
+                <i class="fa-solid fa-images"></i>
+                İçerik Yönetimi
+            </div>
+            <div class="nav-item">
+                <i class="fa-solid fa-bullhorn"></i>
+                Reklam Ayarları
+            </div>
+
+            <div class="user-profile">
                 <img id="adminPhoto" src="" alt="Profil">
-                <button class="logout-btn" onclick="logout()">Çıkış Yap</button>
+                <div class="user-info-text">
+                    <div id="adminName">Yükleniyor...</div>
+                    <span>Yetkili Sistem Yöneticisi</span>
+                </div>
+                <i class="fa-solid fa-right-from-bracket logout-icon" onclick="logout()" title="Çıkış Yap"></i>
             </div>
         </div>
 
-        <div class="dashboard-content">
-            
-            <!-- Canlı İstatistikler -->
-            <div class="card">
-                <h3>👥 Canlı İstatistikler</h3>
-                <p>Şu an uygulamayı kullanan aktif kişi sayısı:</p>
-                <div class="stats-number" id="activeUsers">--</div>
-                <small style="color:var(--gold-light); opacity:0.6;">(Veriler simülasyondur, API bağlanınca aktifleşecek)</small>
-            </div>
-
-            <!-- Reklam Kontrolü -->
-            <div class="card">
-                <h3>💰 Reklam Yönetimi (AdMob)</h3>
-                <div class="switch-container">
-                    <span>Tüm Reklamları Aç/Kapat</span>
-                    <label class="switch">
-                        <input type="checkbox" id="adSwitch" checked>
-                        <span class="slider"></span>
-                    </label>
-                </div>
-                <div class="switch-container">
-                    <span>Google Client ID</span>
-                    <input type="text" value="93580675475-fm4h6..." disabled style="background:transparent; border:1px solid var(--gold); color:white; padding:5px; border-radius:5px; width:150px;">
+        <!-- Sağ İçerik -->
+        <div class="main-content">
+            <div class="header">
+                <h2>Genel Bakış</h2>
+                <div class="status" id="apiStatus">
+                    <i class="fa-solid fa-circle"></i> Canlı Bağlantı Yok (Simülasyon)
                 </div>
             </div>
 
-            <!-- İçerik Yönetimi -->
-            <div class="card">
-                <h3>🖼️ Duvar Kağıdı Yönetimi</h3>
-                <p>Uygulamaya uzaktan yeni duvar kağıdı ekleyin.</p>
-                <input type="file" style="margin-bottom:15px; color:white;">
-                <button style="background:var(--gold); border:none; padding:10px 15px; border-radius:8px; cursor:pointer; font-weight:bold; color:var(--primary)">Yükle & Uygulamaya Gönder</button>
+            <!-- İstatistik Kartları -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <i class="fa-solid fa-users stat-icon"></i>
+                    <div class="stat-title">
+                        <span>Anlık Aktif Kullanıcı</span>
+                        <i class="fa-solid fa-arrow-trend-up" style="color:var(--accent)"></i>
+                    </div>
+                    <div class="stat-value" id="activeUsers">--</div>
+                </div>
+                
+                <div class="stat-card">
+                    <i class="fa-solid fa-download stat-icon"></i>
+                    <div class="stat-title">
+                        <span>Toplam İndirme (Tahmini)</span>
+                    </div>
+                    <div class="stat-value">--</div>
+                </div>
+
+                <div class="stat-card">
+                    <i class="fa-solid fa-image stat-icon"></i>
+                    <div class="stat-title">
+                        <span>Aktif Duvar Kağıdı</span>
+                    </div>
+                    <div class="stat-value">--</div>
+                </div>
+            </div>
+
+            <!-- Ayar Panelleri -->
+            <div class="controls-grid">
+                
+                <!-- Reklam Paneli -->
+                <div class="control-panel">
+                    <div class="panel-title">
+                        <i class="fa-solid fa-bullhorn"></i> Reklam & Para Kazanma
+                    </div>
+                    
+                    <div class="setting-row">
+                        <div class="setting-info">
+                            <h4>Genel Reklam Gösterimi</h4>
+                            <p>Uygulamadaki tüm banner ve geçiş reklamlarını aç/kapat.</p>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" id="adSwitch" onchange="saveConfig()" disabled>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="setting-row">
+                        <div class="setting-info">
+                            <h4>Ramazan Modu (Reklamsız)</h4>
+                            <p>Özel dini günlerde reklamları otomatik kapatır.</p>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" disabled>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    
+                    <button class="btn" style="background:rgba(255,255,255,0.1); color:white; margin-top:10px;" onclick="saveConfig()" id="saveBtn">Ayarları API'ye Kaydet</button>
+                </div>
+
+                <!-- Duvar Kağıdı Paneli -->
+                <div class="control-panel">
+                    <div class="panel-title">
+                        <i class="fa-solid fa-images"></i> Yeni İçerik Yükle
+                    </div>
+                    
+                    <div style="border: 2px dashed rgba(212,175,55,0.3); border-radius: 12px; padding: 2rem; text-align: center; margin-bottom: 1rem; cursor:pointer;" onclick="document.getElementById('fileUpload').click()">
+                        <i class="fa-solid fa-cloud-arrow-up" style="font-size: 2rem; color: var(--gold); margin-bottom: 10px;"></i>
+                        <h4 style="font-weight: 500;">Görsel Yüklemek İçin Tıklayın</h4>
+                        <p style="font-size: 0.8rem; color: var(--text-muted); margin-top:5px;">Desteklenen formatlar: JPG, PNG, WEBP</p>
+                        <input type="file" id="fileUpload" style="display: none;" accept="image/*">
+                    </div>
+                    
+                    <button class="btn">Uygulamaya Yayına Al</button>
+                </div>
+            </div>
+
+            <!-- API Bilgilendirme -->
+            <div style="margin-top:2rem; background:rgba(239, 68, 68, 0.1); border-left:4px solid var(--danger); padding:1rem; border-radius:8px;">
+                <h4 style="color:var(--danger); margin-bottom:5px;"><i class="fa-solid fa-triangle-exclamation"></i> API Bağlantısı Bekleniyor</h4>
+                <p style="font-size:0.85rem; color:rgba(255,255,255,0.7);">
+                    Şu anda arayüz tasarımı görüyorsunuz. Verilerin (Anlık kullanıcı, Reklam açma/kapatma) gerçekten çalışması için Cloudflare Functions (Sunucu) entegrasyonu kodlanacaktır.
+                </p>
             </div>
 
         </div>
     </div>
 
     <script>
-        // Google'dan giriş başarılı olunca burası çalışacak
         function handleCredentialResponse(response) {
-            // Şifrelenmiş token'ı parçalayıp kullanıcı bilgilerini alıyoruz
-            const responsePayload = decodeJwtResponse(response.credential);
+            const token = response.credential;
+            const base64Url = token.split('.')[1];
+            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            const payload = JSON.parse(decodeURIComponent(window.atob(base64).split('').map(function(c) {
+                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+            }).join('')));
             
-            // YALNIZCA SİZİN MAİLİNİZ GİREBİLİR:
             const ADMIN_EMAIL = "mustafakeksinn@gmail.com";
             
-            if (responsePayload.email === ADMIN_EMAIL) {
-                console.log("Giriş Yapan Kişi: " + responsePayload.name);
-                
-                // Paneli aç, giriş ekranını gizle
+            if (payload.email === ADMIN_EMAIL) {
                 document.getElementById('loginScreen').style.display = 'none';
-                document.getElementById('adminDashboard').style.display = 'block';
-                document.body.style.display = 'block';
-
-                // Kullanıcı bilgilerini ekrana yaz
-                document.getElementById('adminName').innerText = responsePayload.name;
-                document.getElementById('adminPhoto').src = responsePayload.picture;
+                document.getElementById('adminDashboard').style.display = 'flex';
+                
+                document.getElementById('adminName').innerText = payload.name;
+                document.getElementById('adminPhoto').src = payload.picture;
+                
+                // Simüle edilmiş veri yükleme efekti
+                setTimeout(() => {
+                    document.getElementById('activeUsers').innerText = "Simüle";
+                    document.getElementById('adSwitch').disabled = false;
+                }, 1000);
             } else {
-                alert("Yetkisiz Giriş! Sadece yönetici hesabı erişebilir.");
+                alert("Yetkisiz Giriş! Sadece yönetici hesabı (mustafakeksinn) erişebilir.");
             }
         }
 
-        // Çıkış yapma işlemi
         function logout() {
-            document.getElementById('loginScreen').style.display = 'block';
+            document.getElementById('loginScreen').style.display = 'flex';
             document.getElementById('adminDashboard').style.display = 'none';
-            document.body.style.display = 'flex';
         }
-
-        // JWT Çözücü fonksiyon (Güvenlik amaçlı)
-        function decodeJwtResponse(token) {
-            var base64Url = token.split('.')[1];
-            var base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-            var jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function(c) {
-                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-            }).join(''));
-            return JSON.parse(jsonPayload);
+        
+        function saveConfig() {
+            const btn = document.getElementById('saveBtn');
+            btn.innerHTML = "<i class='fa-solid fa-spinner fa-spin'></i> Kaydediliyor...";
+            btn.classList.add('loading');
+            
+            // API yazılmadığı için sahte bekleme
+            setTimeout(() => {
+                btn.innerHTML = "Ayarları API'ye Kaydet";
+                btn.classList.remove('loading');
+                alert("Uyarı: Arka plan API'si henüz yazılmadığı için değişiklikler Android uygulamasına GİTMEDİ. Lütfen yapay zekadan API entegrasyonunu tamamlamasını isteyin.");
+            }, 1000);
         }
     </script>
 </body>
