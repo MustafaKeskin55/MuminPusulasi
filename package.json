@@ -1,0 +1,20 @@
+{
+  "name": "muminpusulasi-website",
+  "version": "1.1.0",
+  "description": "Mümin Pusulası Modern & Lüks İslami Yaşam Rehberi Web Tanıtım Sitesi",
+  "scripts": {
+    "deploy": "npx wrangler pages deploy . --project-name=muminpusulasi",
+    "serve": "npx serve ."
+  },
+  "keywords": [
+    "mumin-pusulasi",
+    "keskindev",
+    "ezan-vakitleri",
+    "kible-pusulasi"
+  ],
+  "author": "Mustafa Keskin (keskindev.com)",
+  "license": "MIT",
+  "devDependencies": {
+    "qrcode": "^1.5.4"
+  }
+}
